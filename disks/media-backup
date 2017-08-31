@@ -1,21 +1,24 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
+current_date="$(date -I)"
 # The path used to create a snapshot for.
 path_to_snap="$1"
 # Destination that the newly created snapshot will be stored.
-new_snap_dest="$2/$(date -I)"
+new_snap_dest="$2"
 # Destination path that the newly created snapshot will be sent to.
 snap_export_path="$3"
 
+snaps=(${new_snap_dest}/*)
+prev_snap_dest="${snaps[-1]}"
+
 # Create a new snapshot of the specified path_to_snap.
 create_snap() {
-	btrfs subvolume snapshot -r "${path_to_snap}" "${new_snap_dest}"
+	btrfs subvolume snapshot -r "${path_to_snap}" "${new_snap_dest}/${current_date}"
 	sync
 }
 
 export_snap_diff() {
-	# TODO: Implement prev_snap_dest
-	btrfs send -p "${prev_snap_dest}" "${new_snap_dest}" | btrfs receive "${snap_export_path}"
+	btrfs send -p "${prev_snap_dest}" "${new_snap_dest}/${current_date}" | btrfs receive "${snap_export_path}"
 }
 
 # TODO: Implement (will handle retention)

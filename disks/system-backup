@@ -5,7 +5,7 @@
 # TODO: Add restore option
 # TODO: Try and handle files being changed during the copy
 
-SRC='\'
+SRC='/'
 
 script_name="$(basename $0)"
 dest="$1"
@@ -20,11 +20,14 @@ if [[ $# -ne 1 ]]; then
 	exit 1
 fi
 
+[[ -d "${dest}" ]] || mkdir "${dest}"
+
 rsync \
 	--archive \
 	--acls \
 	--xattrs \
 	--exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} \
+	--delete
 	"${SRC}" \
 	"${dest}"
 
