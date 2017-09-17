@@ -2,16 +2,80 @@
 
 set -e
 
+script_name="$(basename $0)"
+
+usage() {
+	printf "%s [-s -r -c] [snap_src_path] [snap_dest_path] [snap_export_path]\n" "${script_name}"
+}
+
+if [[ $# -ne 1 ]]; then
+	usage
+
+	exit 1
+fi
+
 current_date="$(date -I)"
 # Source path used to create a snapshot of.
-snap_src_path="$1"
+snap_src_path="$2"
 # Destination path that the newly created snapshot will be stored.
-snap_dest_path="$2"
+snap_dest_path="$3"
 # Destination path that the newly created snapshot will be sent to.
-snap_export_path="$3"
+snap_export_path="$4"
 # Number of snapshot to keep.
 # TODO: Make configurable and use dates.
 snaps_to_keep=7
+
+parse_args() {
+	while :; do
+		case $1 in
+			-h|--help)
+				usage
+				exit
+				;;
+			-s|--system)
+				system_backup $1
+				;;
+			-r|--restore-system)
+				exit
+				;;
+			-c|--check)
+				check_disks
+				exit
+				;;
+			--)
+				shift
+				break
+				;;
+			*)
+				break
+		esac
+
+		shift
+	done
+}
+
+# Backs up the system root to a specified destination.
+system_backup() {
+	local dest="$1"
+
+	[[ -d "${dest}" ]] || mkdir "${dest}"
+
+	# TODO: Exclude cache directories, imcomplete torrents, and swap file.
+	# TODO: Try and handle files being changed during the copy
+	rsync --verbose --archive --acls --xattrs --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} --delete / "${dest}"
+}
+
+# TODO: Implement
+# Restores a backed up system root to a new root.
+system_restore() {
+	:
+}
+
+# Runs utilities to check the health of all disks on the system.
+# TODO: Implement
+check_disks() {
+	:
+}
 
 # Create a new snapshot of the specified snap_src_path.
 create_snap() {
@@ -51,6 +115,8 @@ clean_snaps() {
 		btrfs subvolume delete "${exported_snaps[@]::${snaps_to_delete}}"
 	fi
 }
+
+parse_args $1
 
 create_snap
 export_snap_diff
