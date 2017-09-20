@@ -2,7 +2,7 @@
 
 set -e
 
-script_name="$(basename $0)"
+script_name="$(basename "$0")"
 
 usage() {
 	printf "%s [-s -r -c] [snap_src_path] [snap_dest_path] [snap_export_path]\n" "${script_name}"
@@ -74,8 +74,9 @@ system_backup() {
 	local dest="$1"
 
 	[[ -d "${dest}" ]] || mkdir "${dest}"
-	
-	rsync --verbose --archive --acls --xattrs --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found","/var/tmp/*","/var/cache/*","/home/*/.cache/*"} --delete / "${dest}"
+
+	# --xattrs gives me shit
+	rsync --archive --acls --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found","/var/tmp/*","/var/cache/*","/home/*/.cache/*"} --delete / "${dest}"
 }
 
 # TODO: Implement
@@ -112,18 +113,18 @@ clean_snaps() {
 	local num_snaps=${#snaps[@]}
 	local num_exported_snaps=${#exported_snaps[@]}
 
-	if [[ ${num_snaps} != ${num_exported_snaps} ]]; then
+	if [[ ${num_snaps} != "${num_exported_snaps}" ]]; then
 		return 1
 	fi
 
 	if [[ ${num_snaps} -gt ${snaps_to_keep} ]]; then
-		local snaps_to_delete=$((${num_snaps} - ${snaps_to_keep}))
+		local snaps_to_delete=$((num_snaps - snaps_to_keep))
 
 		btrfs subvolume delete "${snaps[@]::${snaps_to_delete}}"
 	fi
 
 	if [[ ${num_exported_snaps} -gt ${snaps_to_keep} ]]; then
-		local snaps_to_delete=$((${num_exported_snaps} - ${snaps_to_keep}))
+		local snaps_to_delete=$((num_exported_snaps - snaps_to_keep))
 
 		btrfs subvolume delete "${exported_snaps[@]::${snaps_to_delete}}"
 	fi
